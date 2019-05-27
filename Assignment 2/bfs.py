@@ -64,67 +64,6 @@ def bfs(start_state):
             max_frontier_size = len(queue)
 
 
-def ast(start_state):
-
-    global max_frontier_size, goal_node, max_search_depth
-
-    explored, heap, heap_entry, counter = set(), list(), {}, itertools.count()
-
-    key = h(start_state)
-
-    root = State(start_state, None, None, 0, 0, key)
-
-    entry = (key, 0, root)
-
-    heappush(heap, entry)
-
-    heap_entry[root.map] = entry
-
-    while heap:
-
-        node = heappop(heap)
-
-        explored.add(node[2].map)
-
-        if node[2].state == goal_state:
-            goal_node = node[2]
-            return heap
-
-        neighbors = expand(node[2])
-
-        for neighbor in neighbors:
-
-            neighbor.key = neighbor.cost + h(neighbor.state)
-
-            entry = (neighbor.key, neighbor.move, neighbor)
-
-            if neighbor.map not in explored:
-
-                heappush(heap, entry)
-
-                explored.add(neighbor.map)
-
-                heap_entry[neighbor.map] = entry
-
-                if neighbor.depth > max_search_depth:
-                    max_search_depth += 1
-
-            elif neighbor.map in heap_entry and neighbor.key < heap_entry[neighbor.map][2].key:
-
-                hindex = heap.index((heap_entry[neighbor.map][2].key,
-                                     heap_entry[neighbor.map][2].move,
-                                     heap_entry[neighbor.map][2]))
-
-                heap[int(hindex)] = entry
-
-                heap_entry[neighbor.map] = entry
-
-                heapify(heap)
-
-        if len(heap) > max_frontier_size:
-            max_frontier_size = len(heap)
-
-
 def expand(node):
 
     global nodes_expanded
