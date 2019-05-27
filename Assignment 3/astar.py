@@ -1,11 +1,14 @@
 import random
 from collections import deque
-from state import State
+from state import State, State2
+import itertools
+from heapq import heappush, heappop, heapify
 
 
 
 goal_state = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 goal_node = State
+goal_node2 = State2
 initial_state = [0, 1, 2, 3, 4, 5, 6, 7, 8]
 board_len = 9
 board_side = int(board_len ** 0.5)
@@ -23,7 +26,7 @@ def shuffler():
     given = goal_state[:]
     print("goal state:"+str(given))
     randommoves = randomshuffler()
-    given = performpath(randommoves,given,0,'no')
+    given = performpath(randommoves,given,0,)
     print("Randomized state: " + str(given))
     randomized_state = given
 
@@ -48,7 +51,9 @@ def bfs(start_state):
 
         if node.state == goal_state:
             goal_node = node
-            return queue
+            print(str(len(explored))+": Size")
+
+            return queue, len(explored)
 
         neighbors = expand(node)
 
@@ -63,66 +68,69 @@ def bfs(start_state):
         if len(queue) > max_frontier_size:
             max_frontier_size = len(queue)
 
+    print(str(goal_node)+" : goal node")
 
 def ast(start_state):
 
-    global max_frontier_size, goal_node, max_search_depth
+    global max_frontier_size, goal_node2, max_search_depth
 
     explored, heap, heap_entry, counter = set(), list(), {}, itertools.count()
 
-    key = h(start_state)
+    key2 = h(start_state)
 
-    root = State(start_state, None, None, 0, 0, key)
+    root = State2(start_state, None, None, 0, 0, key2)
 
-    entry = (key, 0, root)
+    entry = (key2, 0, root)
 
     heappush(heap, entry)
 
-    heap_entry[root.map] = entry
+    heap_entry[root.map2] = entry
 
     while heap:
 
         node = heappop(heap)
 
-        explored.add(node[2].map)
+        explored.add(node[2].map2)
 
-        if node[2].state == goal_state:
-            goal_node = node[2]
-            return heap
+        if node[2].state2 == goal_state:
+            goal_node2 = node[2]
+            print(str(len(explored))+": Size2")
+            return heap, len(explored)
 
-        neighbors = expand(node[2])
+        neighbors2 = expand2(node[2])
 
-        for neighbor in neighbors:
+        for neighbor in neighbors2:
 
-            neighbor.key = neighbor.cost + h(neighbor.state)
+            neighbor.key2 = neighbor.cost2 + h(neighbor.state2)
 
-            entry = (neighbor.key, neighbor.move, neighbor)
+            entry = (neighbor.key2, neighbor.move2, neighbor)
 
-            if neighbor.map not in explored:
+            if neighbor.map2 not in explored:
 
                 heappush(heap, entry)
 
-                explored.add(neighbor.map)
+                explored.add(neighbor.map2)
 
-                heap_entry[neighbor.map] = entry
+                heap_entry[neighbor.map2] = entry
 
-                if neighbor.depth > max_search_depth:
+                if neighbor.depth2 > max_search_depth:
                     max_search_depth += 1
 
-            elif neighbor.map in heap_entry and neighbor.key < heap_entry[neighbor.map][2].key:
+            elif neighbor.map2 in heap_entry and neighbor.key2 < heap_entry[neighbor.map2][2].key2:
 
-                hindex = heap.index((heap_entry[neighbor.map][2].key,
-                                     heap_entry[neighbor.map][2].move,
-                                     heap_entry[neighbor.map][2]))
+                hindex = heap.index((heap_entry[neighbor.map2][2].key2,
+                                     heap_entry[neighbor.map2][2].move2,
+                                     heap_entry[neighbor.map2][2]))
 
                 heap[int(hindex)] = entry
 
-                heap_entry[neighbor.map] = entry
+                heap_entry[neighbor.map2] = entry
 
                 heapify(heap)
 
         if len(heap) > max_frontier_size:
             max_frontier_size = len(heap)
+
 
 
 def expand(node):
@@ -141,6 +149,21 @@ def expand(node):
 
     return nodes
 
+def expand2(node):
+
+    global nodes_expanded
+    nodes_expanded += 1
+
+    neighbors2 = list()
+
+    neighbors2.append(State2(move(node.state2, 1), node, 1, node.depth2 + 1, node.cost2 + 1, 0))
+    neighbors2.append(State2(move(node.state2, 2), node, 2, node.depth2 + 1, node.cost2 + 1, 0))
+    neighbors2.append(State2(move(node.state2, 3), node, 3, node.depth2 + 1, node.cost2 + 1, 0))
+    neighbors2.append(State2(move(node.state2, 4), node, 4, node.depth2 + 1, node.cost2 + 1, 0))
+
+    nodes2 = [neighbor for neighbor in neighbors2 if neighbor.state2]
+
+    return nodes2
 
 def move(state, position):
 
@@ -224,6 +247,27 @@ def backtrace():
 
     return moves
 
+def backtrace2():
+
+    moves = []
+    current_node = goal_node2
+
+    while initial_state != current_node.state2:
+
+        if current_node.move2 == 1:
+            movement = 'up'
+        elif current_node.move2 == 2:
+            movement = 'down'
+        elif current_node.move2 == 3:
+            movement = 'left'
+        else:
+            movement = 'right'
+
+        moves.insert(0, movement)
+        current_node = current_node.parent2
+
+    return moves
+
 
 def export(frontier):
 
@@ -236,7 +280,7 @@ def export(frontier):
 
 
 
-def performpath(moves,given,num,counter):
+def performpath(moves,given,num):
 
     shortestmove = moves[:]
     tempList = given[:]
@@ -244,26 +288,20 @@ def performpath(moves,given,num,counter):
     for element in shortestmove:
         if element == 'right':
             num = moveRight(tempList,num)
-            if counter == 'yes':
-                printer(tempList)
-            
+
 
         elif element == 'left':
             num = moveLeft(tempList,num)
-            if counter == 'yes':
-                printer(tempList)
-       
+
 
         elif element == 'up':
             num = moveUp(tempList,num)
-            if counter == 'yes':
-                printer(tempList)
+
           
 
         elif element == 'down':
             num = moveDown(tempList,num)
-            if counter == 'yes':
-                printer(tempList)
+  
 
     return tempList
             
@@ -296,13 +334,6 @@ def moveLeft(temp, num):
     temp[num-1] = 0
     num = num -1 
     return num 
-
-def printer(solution):
-
-    print(str(solution[0])+" "+str(solution[1])+" "+str(solution[2]))
-    print(str(solution[3])+" "+str(solution[4])+" "+str(solution[5]))
-    print(str(solution[6])+" "+str(solution[7])+" "+str(solution[8]))
-    print("\n")
 
 def randomshuffler():
 
